@@ -1,0 +1,62 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <allegro.h>
+#define SCREEN_W 1184
+#define SCREEN_H 732
+
+void init_ALLEG(){
+    allegro_init();
+    set_color_depth(desktop_color_depth());
+
+    if((set_gfx_mode(GFX_AUTODETECT_WINDOWED,SCREEN_W,SCREEN_H,0,0))!=0){
+        allegro_message("Probleme de mode graphique !");
+        allegro_exit();
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main()
+{
+    //Declaration des bitmaps
+    BITMAP* titre;//fond choisi
+    BITMAP* fond;//premier fond
+    BITMAP* fond2;//deuxieme fond
+    BITMAP* choix;//fond choisi
+    BITMAP* buffy;//buffer
+
+    init_ALLEG();//initialisation
+
+    //initialisation des bitmaps
+    fond=load_bitmap("page.bmp",NULL);
+    fond2=load_bitmap("flou.bmp",NULL);
+    titre=load_bitmap("TITRE.bmp",NULL);
+    choix=fond;
+    buffy=create_bitmap(SCREEN_W,SCREEN_H);
+
+    //installation du clavier et de la souris
+    install_keyboard();
+    install_mouse();
+    //affichage de la souris sur l'écran
+    show_mouse(screen);
+
+    while(!key[KEY_ESC]){
+            //ECRAN DE TITRE
+        blit(choix,buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+        blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+        if((mouse_b & 1)&& mouse_x>404 && mouse_x<810 && mouse_y>262 && mouse_y<459){
+            //ECRAN DE CHOIX NOMBRE
+            choix=fond2;
+            blit(choix,buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            rest(50);
+        }
+
+    }
+    allegro_exit();
+    destroy_bitmap(buffy);
+    destroy_bitmap(fond);
+    destroy_bitmap(fond2);
+    destroy_bitmap(titre);
+
+    return 0;
+}END_OF_MAIN();
