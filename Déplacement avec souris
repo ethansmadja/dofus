@@ -1,0 +1,105 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <allegro.h>
+#define SCREEN_W 1184
+#define SCREEN_H 732
+
+void init_ALLEG(){
+    allegro_init();
+    set_color_depth(desktop_color_depth());
+
+    if((set_gfx_mode(GFX_AUTODETECT_WINDOWED,SCREEN_W,SCREEN_H,0,0))!=0){
+        allegro_message("Probleme de mode graphique !");
+        allegro_exit();
+        exit(EXIT_FAILURE);
+    }
+}
+
+void recentre(int* x, int* y){//coordonnees appuye par la souris
+    //initialisation des cadres de multiples de 32
+    int cadreB=0, cadreD=0;
+    //cherche les multiples de 32 juste au-dessus des coordonnees
+    while(cadreB<*x || cadreD<*y || cadreB<*x && cadreD<*y){
+        if(cadreB<*x){
+            cadreB=cadreB+32;
+        }
+        else if(cadreD<*y){
+            cadreD=cadreD+32;
+        }
+        else if(cadreB<*x && cadreD<*y){
+            cadreB=cadreB+32;
+            cadreD=cadreD+32;
+        }
+    }
+    /*/
+        enleve moins 16 du multiple de 32 juste au-dessus du cadre pour
+        avoir le centre de la case, et l'attribuer aux coordonnees
+    /*/
+    *x=(cadreB-16);
+    *y=cadreD-16;
+}
+
+int main()
+{
+    //Declaration des bitmaps et des variables
+    int x=16,y=16;
+    int clicX=0, clicY=0, temoinX=0, temoinY=0;
+    int compter=0;
+    BITMAP* fond;//premier fond
+    BITMAP* fond2;//deuxieme fond
+    BITMAP* cloud;
+    BITMAP* cloud2;
+    BITMAP* objet;
+    BITMAP* buffy;//buffer
+    //BITMAP* arriereplan;
+
+    init_ALLEG();//initialisation
+
+    //initialisation des bitmaps
+    //fond=load_bitmap("dep2.bmp",NULL);
+    fond=load_bitmap("quadrille.bmp",NULL);
+    fond2=load_bitmap("blu.bmp",NULL);
+    cloud=load_bitmap("cloud3.bmp",NULL);
+    cloud2=load_bitmap("cloud4.bmp",NULL);
+    objet=load_bitmap("MapInfoObjet.bmp",NULL);
+    //arriereplan=load_bitmap("flou2.bmp",NULL);
+    buffy=create_bitmap(SCREEN_W,SCREEN_H);
+
+    //installation du clavier et de la souris
+    install_keyboard();
+    install_mouse();
+    //affichage de la souris sur l'écran
+    show_mouse(screen);
+
+    while(!key[KEY_ESC]){
+
+        if((mouse_b & 1) && mouse_x>=0 && mouse_x<=SCREEN_W && mouse_y>=0 && mouse_y<=SCREEN_H && (getpixel(fond2,mouse_x,mouse_y)==makecol(255,255,255))){
+            x=mouse_x;
+            y=mouse_y;
+            //recentre au milieu de la case
+            recentre(&x,&y);
+            //blit(arriereplan,buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+            masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+            circlefill(buffy, x, y,20, makecol(0,255,255));
+            masked_blit(objet,buffy,0,0,0,0,objet->w,objet->h);
+            masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            rest(100);
+        }
+        //blit(arriereplan,buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+        masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+        masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+        circlefill(buffy, x, y,20, makecol(0,255,255));
+        masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+        masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+        blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+
+    }
+    allegro_exit();
+    destroy_bitmap(buffy);
+    destroy_bitmap(fond);
+    destroy_bitmap(fond2);
+
+    return 0;
+}END_OF_MAIN();
