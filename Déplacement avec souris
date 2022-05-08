@@ -4,29 +4,36 @@
 #define SCREEN_W 1184
 #define SCREEN_H 732
 
-void init_ALLEG(){
+void init_ALLEG()
+{
     allegro_init();
     set_color_depth(desktop_color_depth());
 
-    if((set_gfx_mode(GFX_AUTODETECT_WINDOWED,SCREEN_W,SCREEN_H,0,0))!=0){
+    if((set_gfx_mode(GFX_AUTODETECT_WINDOWED,SCREEN_W,SCREEN_H,0,0))!=0)
+    {
         allegro_message("Probleme de mode graphique !");
         allegro_exit();
         exit(EXIT_FAILURE);
     }
 }
 
-void recentre(int* x, int* y){//coordonnees appuye par la souris
+void recentre(int* x, int* y) //coordonnees appuye par la souris
+{
     //initialisation des cadres de multiples de 32
     int cadreB=0, cadreD=0;
     //cherche les multiples de 32 juste au-dessus des coordonnees
-    while(cadreB<*x || cadreD<*y || cadreB<*x && cadreD<*y){
-        if(cadreB<*x){
+    while( (cadreB<*x )|| (cadreD<*y )|| (cadreB<*x && cadreD<*y) )
+    {
+        if(cadreB<*x)
+        {
             cadreB=cadreB+32;
         }
-        else if(cadreD<*y){
+        else if(cadreD<*y)
+        {
             cadreD=cadreD+32;
         }
-        else if(cadreB<*x && cadreD<*y){
+        else if(cadreB<*x && cadreD<*y)
+        {
             cadreB=cadreB+32;
             cadreD=cadreD+32;
         }
@@ -71,9 +78,11 @@ int main()
     //affichage de la souris sur l'écran
     show_mouse(screen);
 
-    while(!key[KEY_ESC]){
+    while(!key[KEY_ESC])
+    {
 
-        if((mouse_b & 1) && mouse_x>=0 && mouse_x<=SCREEN_W && mouse_y>=0 && mouse_y<=SCREEN_H && (getpixel(fond2,mouse_x,mouse_y)==makecol(255,255,255))){
+        if((mouse_b & 1) && mouse_x>=0 && mouse_x<=SCREEN_W && mouse_y>=0 && mouse_y<=SCREEN_H && (getpixel(fond2,mouse_x,mouse_y)==makecol(255,255,255)))
+        {
             x=mouse_x;
             y=mouse_y;
             //recentre au milieu de la case
@@ -102,4 +111,5 @@ int main()
     destroy_bitmap(fond2);
 
     return 0;
-}END_OF_MAIN();
+}
+END_OF_MAIN();
