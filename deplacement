@@ -1,0 +1,559 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <allegro.h>
+#define SCREEN_W 1184
+#define SCREEN_H 800
+#define NBRFD 2 //nombre de page de fond du debut du jeu (ceux du menu)
+#define NBRBM 4 //nombre de page de bouton differents par menu
+#define NBRINTER 3 //nombre de page de bouton differents par menu
+
+typedef struct joueur{
+    int type;
+    int x;
+    int y;
+    BITMAP* immobile;
+    BITMAP* avance[6];
+    BITMAP* attaque[6];
+    BITMAP* attaque2[6];
+}t_joueur;
+
+void init_ALLEG(){
+    allegro_init();
+    set_color_depth(desktop_color_depth());
+
+    if((set_gfx_mode(GFX_AUTODETECT_WINDOWED,SCREEN_W,SCREEN_H,0,0))!=0){
+        allegro_message("Probleme de mode graphique !");
+        allegro_exit();
+        exit(EXIT_FAILURE);
+    }
+}
+
+void recentre(int* x, int* y){//coordonnees appuye par la souris
+    //initialisation des cadres de multiples de 32
+    int cadreB=0, cadreD=0;
+    //cherche les multiples de 32 juste au-dessus des coordonnees
+    while(cadreB<*x || cadreD<*y || cadreB<*x && cadreD<*y){
+        if(cadreB<*x){
+            cadreB=cadreB+32;
+        }
+        else if(cadreD<*y){
+            cadreD=cadreD+32;
+        }
+        else if(cadreB<*x && cadreD<*y){
+            cadreB=cadreB+32;
+            cadreD=cadreD+32;
+        }
+    }
+    /*/
+        enleve moins 16 du multiple de 32 juste au-dessus du cadre pour
+        avoir le centre de la case, et l'attribuer aux coordonnees
+    /*/
+    *x=(cadreB-16);
+    *y=cadreD-16;
+}
+
+int chrono(){
+    long clk_tck = CLOCKS_PER_SEC;
+   clock_t t1, t2;
+
+   /* Recuperation du temps initial en "clock ticks" */
+   t1 = clock();
+   t2 = clock();
+}
+
+int souris(){
+    //fonction horloge
+    int c=0,click=0,finC=0;
+
+    if((mouse_b & 1)){
+        while((mouse_b & 1)){
+            c++;
+        }
+        finC=c;
+        printf("c: %d",c);
+        if(finC>0 && finC<30000000){
+            click=1;
+        }
+        else{
+            click=(-1);
+        }
+    }
+    return click;
+}
+
+int debut(){
+
+    /*
+        Sous-programme servant a afficher le menu et d'attribuer les personnages au joueurs.
+        On passera a la page suivante une fois le bon endroit cliqué autant de fois requis.
+    */
+    //fonction horloge
+    long clk_tck = CLOCKS_PER_SEC;
+    clock_t t1, t2;
+
+    //initialisation et declaration des variables et des bitmaps
+    int j=0, page=1, nbrJoueurs=0, fin=0;
+    int numFond=0,numBouton=0;
+    char nomfichier[50]={0};
+    //t_joueur* joueur;
+
+    BITMAP* fond[2];//fond choisi
+    BITMAP* bouton[5];//fond choisi
+    BITMAP* buffy;//buffer
+
+    for(numFond=0;numFond<NBRFD;numFond++){
+        sprintf(nomfichier,"fond%d.bmp",numFond);
+        fond[numFond]=load_bitmap(nomfichier,NULL);
+    }
+    for(numBouton=0;numBouton<NBRBM;numBouton++){
+        sprintf(nomfichier,"page%d.bmp",numBouton);
+        bouton[numBouton]=load_bitmap(nomfichier,NULL);
+    }
+    buffy=create_bitmap(SCREEN_W,SCREEN_H);
+
+    //remet a 0 pour etape du menu
+    numFond=0;
+    numBouton=0;
+
+    //installation du clavier et de la souris
+    install_keyboard();
+    install_mouse();
+    show_mouse(screen);//affichage de la souris sur l'écran
+
+    //////////////////
+    //PROGRAMME MENU//
+    //////////////////
+    while(!key[KEY_ESC]){
+        if(page==1){
+                //1ERE: MENU
+           blit(fond[numFond],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+           masked_blit(bouton[numBouton],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+           blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+           if((mouse_b & 1) && mouse_x>470 && mouse_x<710 && mouse_y>427 && mouse_y<502){
+                page++;
+                numBouton++;
+                numFond++;
+           }
+        }
+        else if(page==2){
+            //2EME: HISTOIRE JEU
+            //bouton=histo;
+            blit(fond[numFond],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            masked_blit(bouton[numBouton],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            rest(50);
+            if((mouse_b & 1) && mouse_x>1084 && mouse_x<1108 && mouse_y>692 && mouse_y<728){
+                page++;
+                numBouton++;
+            }
+        }
+        else if(page==3){
+                //3EME: MENU JOUEURS
+            //choix=fond2;
+            //bouton=choixJ;
+            blit(fond[numFond],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            masked_blit(bouton[numBouton],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            rest(50);
+            if((mouse_b & 1) && mouse_x>181 && mouse_x<433 && mouse_y>100 && mouse_y<122 || (mouse_b & 1) && mouse_x>235 && mouse_x<394 && mouse_y>136 && mouse_y<264){
+                page++;
+                numBouton++;
+                nbrJoueurs=2;
+                /*/
+                joueur=(t_joueur*)malloc(2*sizeof(t_joueur));
+                if(joueur==NULL){
+                    printf("\nproblème d'allocation");
+                }
+                /*/
+            }
+            else if((mouse_b & 1) && mouse_x>417 && mouse_x<665 && mouse_y>322 && mouse_y<342 || (mouse_b & 1) && mouse_x>464 && mouse_x<624 && mouse_y>357 && mouse_y<486){
+                page++;
+                numBouton++;
+                nbrJoueurs=3;
+                /*/
+                joueur=(t_joueur*)malloc(3*sizeof(t_joueur));
+                if(joueur==NULL){
+                    printf("\nproblème d'allocation");
+                }
+                /*/
+            }
+            else if((mouse_b & 1) && mouse_x>713 && mouse_x<968 && mouse_y>551 && mouse_y<578 || (mouse_b & 1) && mouse_x>767 && mouse_x<929 && mouse_y>588 && mouse_y<717){
+                page++;
+                numBouton++;
+                nbrJoueurs=4;
+                /*/
+                joueur=(t_joueur*)malloc(4*sizeof(t_joueur));
+                if(joueur==NULL){
+                    printf("\nproblème d'allocation");
+                }
+                /*/
+            }
+        }
+        else if(page==4){
+                //4EME: MENU DE SELECTION DES JOUEURS
+            //bouton=selec;
+            blit(fond[numFond],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            masked_blit(bouton[numBouton],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            rest(50);
+            if((mouse_b & 1) && mouse_x>151 && mouse_x<220 && mouse_y>442 && mouse_y<568){
+                if(j==nbrJoueurs){
+                    page++;
+                    numBouton++;
+                    //ATTENTION: SI DEJA ATTRIBUE ALORS IL NE
+                }
+                else{
+                    //attribuer au personnage
+                    /*/
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque%d.bmp",nbrTmage);//attack du guerrier
+                        joueur[j].attaque=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque2%d.bmp",nbrTmage);//attack2 du guerrier
+                        joueur[j].attaque2=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Avance%d.bmp",nbrTmage);//avance du guerrier
+                        joueur[j].avance=load_bitmap(nomfichier,NULL);
+                    }
+                    joueur[j].immobile=load_bitmap("guerrier.bmp",NULL);
+                    /*/
+                    j++;
+                }
+            }
+            else if((mouse_b & 1) && mouse_x>435 && mouse_x<478 && mouse_y>452 && mouse_y<570 ){
+                if(j==nbrJoueurs){
+                    page++;
+                    numBouton++;
+                }
+                else{
+                    //attribuer au personnage
+                    /*/
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque%d.bmp",nbrTmage);//attack de la chasseuse
+                        joueur[j].attaque=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque2%d.bmp",nbrTmage);//attack2 de la chasseuse
+                        joueur[j].attaque2=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Avance%d.bmp",nbrTmage);//avance de la chasseuse
+                        joueur[j].avance=load_bitmap(nomfichier,NULL);
+                    }
+                    joueur[j].immobile=load_bitmap("guerrier.bmp",NULL);
+                    /*/
+                    j++;
+                }
+            }
+            else if((mouse_b & 1) && mouse_x>701 && mouse_x<775 && mouse_y>420 && mouse_y<567){
+                if(j==nbrJoueurs){
+                    page++;
+                    numBouton++;
+                }
+                else{
+                    //attribuer au personnage
+                    /*/
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque%d.bmp",nbrTmage);//attack du samurai
+                        joueur[j].attaque=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque2%d.bmp",nbrTmage);//attack2 du samurai
+                        joueur[j].attaque2=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Avance%d.bmp",nbrTmage);//avance du samurai
+                        joueur[j].avance=load_bitmap(nomfichier,NULL);
+                    }
+                    joueur[j].immobile=load_bitmap("chasseuse.bmp",NULL);
+                    /*/
+                    j++;
+                }
+            }
+            else if((mouse_b & 1) && mouse_x>972 && mouse_x<1038 && mouse_y>453 && mouse_y<571){
+                if(j==nbrJoueurs){
+                    page++;
+                    numBouton++;
+                }
+                else{
+                    //attribuer au personnage
+                    /*/
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque%d.bmp",nbrTmage);//attack du sorcier
+                        joueur[j].attaque=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Attaque2%d.bmp",nbrTmage);//attack2 du sorcier
+                        joueur[j].attaque2=load_bitmap(nomfichier,NULL);
+                    }
+                    for(int nbrImage=0; nbrImage<5; nbrImage++){//METTRE LA BONNE VALEURE DES NOMBRES D'IMAGES
+                        sprintf(nomfichier,"Avance%d.bmp",nbrTmage);//avance du sorcier
+                        joueur[j].avance=load_bitmap(nomfichier,NULL);
+                    }
+                    joueur[j].immobile=load_bitmap("guerrier.bmp",NULL);
+                    /*/
+                    j++;
+                }
+            }
+            /*/
+            else if(t1==0,30){
+                //le personnage s'agrandit
+            }
+            /*/
+        }
+        else{
+            fin=1;
+            rest(500);//pause avant fin du sous-programme
+            return fin;
+        }
+        /*
+        else{
+            blit(fond[numFond],buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            //masked_blit(bouton,buffy,0,0,0,0,SCREEN_W,SCREEN_H);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            rest(50);
+        }*/
+    }
+}
+/*/
+if((mouse_b & 1) && mouse_x>=25 && mouse_x<=135 && mouse_y>=667 && mouse_y<=775){
+    masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+    masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+    masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+    masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-(((perso->h)+40)/2)), perso->w,perso->h);
+    masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+    masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+    masked_blit(bouton[2],buffy,0,0,20,381,bouton[2]->w,bouton[2]->h);
+    blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+}
+
+/*/
+/*/
+void dessinCarre(int* cadreA,int* cadreB, int* cadreC, int* cadreD, BITMAP* buffy, BITMAP* fond2){
+    int a=0, b=0;
+    /*/
+    /*/
+    for(int a=(*cadreA);a<=(*cadreC);(a=a+32)){
+        for(int b=(*cadreB);b<=(*cadreD);(b=b+32)){
+            if((getpixel(fond2,a,b)==makecol(255,255,255))){
+                rect(buffy,a,b,a+32,b+32,makecol(255,242,0));
+            }
+        }
+    }
+    /*/
+/*/
+        for(int b=(*cadreB);b<=(*cadreD);(b=b+32)){
+            for(int a=(*cadreA);a<=(*cadreC);(a=a+32)){
+                if((getpixel(fond2,a+16,b+16)==makecol(255,255,255))){
+                    rect(buffy,a,b,a+32,b+32,makecol(255,242,0));
+                    a=a+32;
+                }
+            }
+        }
+}
+/*/
+
+int initialisation(t_joueur* joueur,int* nbrJoueurs){
+
+    
+}
+
+int main()
+{
+    //Declaration des bitmaps et des variables
+    int i=0,x=304,y=432,X=0,Y=0;
+    int cadreA=0, cadreB=0, cadreC=0,cadreD=0;
+    int finMenu=0;
+    int interface=0;
+    int numBouton=0;
+    int click=0;
+    char nomfichier[50]={0};
+
+    BITMAP* fond;//premier fond
+    BITMAP* fond2;//deuxieme fond
+    BITMAP* perso;
+    BITMAP* buffy;//buffer
+    BITMAP* cloud;
+    BITMAP* cloud2;
+    BITMAP* objet;
+    BITMAP* bouton[3];
+
+    init_ALLEG();//initialisation
+
+    //initialisation des bitmaps
+    //fond=load_bitmap("dep2.bmp",NULL);
+    fond=load_bitmap("quadrille.bmp",NULL);
+    fond2=load_bitmap("blu.bmp",NULL);
+    cloud=load_bitmap("cloud3.bmp",NULL);
+    cloud2=load_bitmap("cloud5.bmp",NULL);
+    objet=load_bitmap("MapInfoObjet.bmp",NULL);
+
+    for(numBouton=0;numBouton<NBRINTER;numBouton++){
+        sprintf(nomfichier,"interface%d.bmp",numBouton);
+        bouton[numBouton]=load_bitmap(nomfichier,NULL);
+    }
+
+    //personnage
+    perso=load_bitmap("Idle.bmp",NULL);
+    buffy=create_bitmap(SCREEN_W,SCREEN_H);
+
+    //installation du clavier et de la souris
+    install_keyboard();
+    install_mouse();
+    show_mouse(screen);//affichage de la souris sur l'écran
+
+    cadreA=x-(16+(32*3));
+    cadreB=x+(16+(32*3));
+    cadreC=y-(16+(32*3));
+    cadreD=y+(16+(32*3));
+
+    finMenu=debut();
+    while(!key[KEY_ESC]){
+        if(finMenu==1 && (mouse_b & 1) && mouse_x>=0 && mouse_x<=SCREEN_W && mouse_y>=0 && mouse_y<=SCREEN_H && mouse_x>=cadreA && mouse_x<=cadreB && mouse_y>=cadreC && mouse_y<=cadreD && (getpixel(fond2,mouse_x,mouse_y)==makecol(255,255,255))){
+            //ajustement des variables
+            X=x;
+            Y=y;
+            x=mouse_x;
+            y=mouse_y;
+            cadreA=x-(16+(32*3));
+            cadreB=x+(16+(32*3));
+            cadreC=y-(16+(32*3));
+            cadreD=y+(16+(32*3));
+            /*
+                Les conditions if et else servent a faire
+            */
+            if((getpixel(fond2,x,y-32)==makecol(0,0,255))){
+                //ajustement de l'affichage
+                recentre(&x,&y);//recentre au milieu de la case
+                masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+                masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+                rect(buffy,cadreA,cadreC,cadreB,cadreD,makecol(255,242,0));
+                masked_blit(objet,buffy,0,0,0,0,objet->w,objet->h);
+                masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-(((perso->h)+40)/2)), perso->w,perso->h);
+                //dessinCarre(&cadreA,&cadreB,&cadreC,&cadreD,buffy,fond2);
+                masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+                masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+                masked_blit(bouton[1],buffy,0,0,0,0,bouton[1]->w,bouton[1]->h);
+
+                if(mouse_x>=25 && mouse_x<=135 && mouse_y>=667 && mouse_y<=775){
+                    if(interface==0){
+                        masked_blit(bouton[2],buffy,0,0,20,256,bouton[2]->w,bouton[2]->h);
+
+                    }
+                }
+                masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+                blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+                rest(100);
+                /*/
+                if((mouse_b & 1)&& mouse_x>=25 && mouse_x<=135 && mouse_y>=667 && mouse_y<=775){
+                    masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+                    masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+                    masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+                    masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-(((perso->h)+40)/2)), perso->w,perso->h);
+                    masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+                    masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+                    masked_blit(bouton[2],buffy,0,0,20,381,bouton[2]->w,bouton[2]->h);
+                    blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+                }
+                /*/
+            }
+            else{
+                //ajustement de l'affichage
+                recentre(&x,&y);//recentre au milieu de la case
+                masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+                masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+                masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-(((perso->h)+40)/2)), perso->w,perso->h);
+                rect(buffy,cadreA,cadreC,cadreB,cadreD,makecol(255,242,0));
+                //dessinCarre(&cadreA,&cadreB,&cadreC,&cadreD,buffy,fond2);
+                masked_blit(objet,buffy,0,0,0,0,objet->w,objet->h);
+                masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+                masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+                masked_blit(bouton[1],buffy,0,0,0,0,bouton[1]->w,bouton[1]->h);
+
+                if(mouse_x>=25 && mouse_x<=135 && mouse_y>=667 && mouse_y<=775){
+                    if(interface==0){
+                        masked_blit(bouton[2],buffy,0,0,20,256,bouton[2]->w,bouton[2]->h);
+
+                    }
+                }
+                blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+                rest(100);
+            }
+        }
+            if((getpixel(fond2,x,y-32)==makecol(0,0,255))){
+                masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+                masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+                rect(buffy,cadreA,cadreC,cadreB,cadreD,makecol(255,242,0));
+                masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+                masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-(((perso->h)+40)/2)), perso->w,perso->h);
+                //dessinCarre(&cadreA,&cadreB,&cadreC,&cadreD,buffy,fond2);
+                masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+                masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+                masked_blit(bouton[1],buffy,0,0,0,0,bouton[1]->w,bouton[1]->h);
+
+                if(mouse_x>=25 && mouse_x<=135 && mouse_y>=667 && mouse_y<=775){
+                    if(interface==0){
+                        masked_blit(bouton[2],buffy,0,0,20,256,bouton[2]->w,bouton[2]->h);
+
+                    }
+                }
+                blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            }
+            else{
+                masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+                masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+                masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-(((perso->h)+40)/2)), perso->w,perso->h);
+                rect(buffy,cadreA,cadreC,cadreB,cadreD,makecol(255,242,0));
+                //dessinCarre(&cadreA,&cadreB,&cadreC,&cadreD,buffy,fond2);
+                masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+                masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+                masked_blit(bouton[0],buffy,0,0,0,0,bouton[0]->w,bouton[0]->h);
+                masked_blit(bouton[1],buffy,0,0,0,0,bouton[1]->w,bouton[1]->h);
+
+                if(mouse_x>=25 && mouse_x<=135 && mouse_y>=667 && mouse_y<=775){
+                    if(interface==0){
+                        masked_blit(bouton[2],buffy,0,0,20,256,bouton[2]->w,bouton[2]->h);
+
+                    }
+                }
+                blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+            }
+    }
+    allegro_exit();
+    destroy_bitmap(buffy);
+    destroy_bitmap(fond);
+    destroy_bitmap(fond2);
+
+    return 0;
+}END_OF_MAIN();
+
+/*/
+    for(numBouton=0; numBouton<NBOUTON; numBouton++){
+        sprintf(nomfichier,"interface%d.bmp",numBouton);
+        bouton[numBouton]=load_bitmap(nomfichier,NULL);
+    }
+    numBouton=0;
+
+
+        else if(finMenu==1 && (mouse_b & 1) && mouse_x>=14 && mouse_x<=59 && mouse_y>=680 && mouse_y<=770){
+            masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+            masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+            masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-((perso->h)/2)), perso->w,perso->h);
+            masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+            masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+            numBouton++;
+            masked_blit(bouton[numBouton],buffy,0,0,10,790,bouton[numBouton]->w,bouton[numBouton]->h);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+        }
+        else if(finMenu==1 && (mouse_b & 2) && mouse_x>=14 && mouse_x<=59 && mouse_y>=680 && mouse_y<=770){
+            masked_blit(cloud,buffy,0,0,0,0,cloud->w,cloud->h);
+            masked_blit(fond,buffy,0,0,0,0,fond->w,fond->h);
+            masked_blit(perso,buffy,0,0,(x-((perso->w)/2)),(y-((perso->h)/2)), perso->w,perso->h);
+            masked_blit(objet,buffy,0,0,0,0,fond->w,fond->h);
+            masked_blit(cloud2,buffy,0,0,0,0,cloud2->w,cloud2->h);
+            masked_blit(bouton[numBouton],buffy,0,0,0,0,bouton[numBouton]->w,bouton[numBouton]->h);
+            blit(buffy,screen,0,0,0,0,buffy->w,buffy->h);
+        }
+/*/
